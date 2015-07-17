@@ -58,25 +58,38 @@ server.use(function(req, res, next){
  * 文件处理
  */
 server.use(function(req, res, next){
+    var file_list = [];
+    var string = [];
+
     if('POST' == req.method && req.files){
         //console.log(req.files); // 书上有误，不是req.body.file而是req.files
         for(var file in req.files){
             if(req.files.hasOwnProperty(file)){
-                fs.readFile(file.path, 'utf8', function(err, data){
-                    if(err){
-                        res.writeHead(500);
-                        res.end('Error');
-                        return;
-                    }
-                    res.writeHead(200, {'Content-Type': 'text/html'});
-                    res.end([
-                        '<h3>File: '+file
-                    ].join(''));
-                });
+                file_list[file_list.length] = req.files[file];
             }
         }
+        read(0);
     }else{
         next();
+    }
+
+    function read(cnt){
+        if(cnt >= file_list.length){
+            res.writeHead(200, {'Content-Type': 'text/html'});
+            res.end(string.join(''));
+        }else{
+            fs.readFile(file_list[cnt].path, 'utf8', function(err, data){
+                if(err){
+                    res.writeHead(500);
+                    res.end('Error!');
+                    return;
+                }
+                string[string.length] = '<h3>File: '+file_list[cnt].name+'</h3>';
+                string[string.length] = '<h4>Type: '+file_list[cnt].type+'</h4>';
+                string[string.length] = '<h4>Contents: '+data+'</h4>';
+                read(cnt+1);
+            });
+        }
     }
 });
 
