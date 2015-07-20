@@ -2,22 +2,23 @@
    Created by feichenxi on 2015/7/20.
 
 extends layout
-blockquote body
-form(action="/signup", method="POST")
-   fieldset
-   legend Sign up
-   p
-      lebel Email
-      input(name="user[email]", type="text")
-      p
-         lebel Email
-         input(name="user[email]", type="text")
-   p
-      lebel Email
-      input(name="user[email]", type="text")
-   p
-      label Password
-      input(name="user[password]", type="password")
-   p
-      button Submit
-   p  a(href="/") Go back
+block body
+   form(action="/signup", method="POST")
+      fieldset
+         legend Sign up
+         p
+            lebel First
+            input(name="user[first]", type="text")
+         p
+            lebel Last
+            input(name="user[last]", type="text")
+         p
+            lebel Email
+            input(name="user[email]", type="text")
+         p
+            label Password
+            input(name="user[password]", type="password")
+         p
+            button Submit
+         p
+            a(href="/") Go back

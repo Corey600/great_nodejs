@@ -24,7 +24,7 @@ app.use(express.session({ secret: 'my secret' }));
  * 指定视图选项
  */
 app.set('view engine', 'jade');
-app.set('view options', { layout: true });
+app.set('view options', { layout: false });
 
 /**
  * 默认路由
