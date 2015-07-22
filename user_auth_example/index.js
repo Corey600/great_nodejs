@@ -9,7 +9,7 @@ var express = require('express');
 var mongodb = require('mongodb');
 
 /**
- * 构建引用程序
+ * 构建应用程序
  */
 var app = express.createServer();
 
@@ -34,20 +34,43 @@ app.get('/', function(req, res){
 });
 
 /**
- * 默认路由
+ * 登陆路由
  */
 app.get('/login', function(req, res){
     res.render('login');
 });
 
 /**
- * 默认路由
+ * 注册路由
  */
 app.get('/signup', function(req, res){
     res.render('signup');
 });
 
-/**
- * 监听
+/***
+ * 连接数据库
  */
-app.listen(3000);
+var server = new mongodb.Server('127.0.0.1', 27017);
+new mongodb.Db('my-website', server).open(function(err, client){
+    if(err) throw err;
+    console.log('\033[96m + \033[39m connected to mongodb');
+    app.users = new mongodb.Collection(client, 'users');
+
+    /**
+     * 处理注册路由
+     */
+    app.post('/signup', function(req, res, next){
+        console.log(req.body);
+        app.users.insert(req.body.user, function(err, doc){
+            if(err) return next(err);
+            res.redirect('/login/' + doc[0].email);
+        });
+    });
+
+    /**
+     * 监听
+     */
+    app.listen(3000, function(){
+        console.log('\033[96m + \033[39m app listening on *:3000');
+    });
+});
