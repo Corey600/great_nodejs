@@ -37,7 +37,11 @@ app.get('/', function(req, res){
  * 登陆路由
  */
 app.get('/login', function(req, res){
-    res.render('login');
+    res.render('login', { signupEmail: '' });
+});
+
+app.get('/login/:signupEmail', function(req, res){
+    res.render('login', { signupEmail: req.params.signupEmail });
 });
 
 /**
@@ -45,6 +49,14 @@ app.get('/login', function(req, res){
  */
 app.get('/signup', function(req, res){
     res.render('signup');
+});
+
+/**
+ * 登出路由
+ */
+app.get('/logout', function(req, res){
+    req.session.loggedIn = null;
+    res.redirect('/');
 });
 
 /***
@@ -68,9 +80,32 @@ new mongodb.Db('my-website', server).open(function(err, client){
     });
 
     /**
-     * 监听
+     * 登录处理路由
      */
-    app.listen(3000, function(){
-        console.log('\033[96m + \033[39m app listening on *:3000');
+    app.post('/login', function(req, res){
+        app.users.findOne({ email: req.body.user.email, password: req.body.user.password }, function(err, doc){
+            if(err) return next(err);
+            if(!doc) return res.send('<p>User not found. Go back and try again</p>');
+            req.session.loggedIn = doc._id.toString();
+            res.redirect('/');
+        });
+    });
+
+    /**
+     * 保证在查询前建立索引
+     */
+    client.ensureIndex('users', 'email', function(err){
+       if(err) throw err;
+        client.ensureIndex('users', 'password', function(err){
+            if(err) throw err;
+            console.log('\033[96m + \033[39m ensured indexes');
+
+            /**
+             * 监听
+             */
+            app.listen(3000, function(){
+                console.log('\033[96m + \033[39m app listening on *:3000');
+            });
+        });
     });
 });
