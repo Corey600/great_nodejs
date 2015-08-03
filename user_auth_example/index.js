@@ -27,21 +27,46 @@ app.set('view engine', 'jade');
 app.set('view options', { layout: false });
 
 /**
+ * 身份验证中间件
+ */
+app.use(function(req, res, next){
+    if(req.session.loggedIn){
+        res.local('authenticated', true);
+        app.users.findOne({_id: mongodb.ObjectID.createFromHexString(req.session.loggedIn)}, function(err, doc){
+            if(err) return next(err);
+            res.local('me', doc);
+            next();
+        });
+    }else{
+        res.local('authenticated', false);
+        next();
+    }
+});
+
+/**
  * 默认路由
  */
 app.get('/', function(req, res){
-    res.render('index', { authenticated: false });
+    res.render('index');
 });
 
 /**
  * 登陆路由
  */
-app.get('/login', function(req, res){
-    res.render('login', { signupEmail: '' });
+app.get('/login/:signupEmail?', function(req, res){
+    res.render('login', { signupEmail: req.params.signupEmail });
 });
 
-app.get('/login/:signupEmail', function(req, res){
-    res.render('login', { signupEmail: req.params.signupEmail });
+/**
+ * 登录处理路由
+ */
+app.post('/login', function(req, res){
+    app.users.findOne({ email: req.body.user.email, password: req.body.user.password }, function(err, doc){
+        if(err) return next(err);
+        if(!doc) return res.send('<p>User not found. Go back and try again</p>');
+        req.session.loggedIn = doc._id.toString();
+        res.redirect('/');
+    });
 });
 
 /**
@@ -49,6 +74,17 @@ app.get('/login/:signupEmail', function(req, res){
  */
 app.get('/signup', function(req, res){
     res.render('signup');
+});
+
+/**
+ * 处理注册路由
+ */
+app.post('/signup', function(req, res, next){
+    console.log(req.body);
+    app.users.insert(req.body.user, function(err, doc){
+        if(err) return next(err);
+        res.redirect('/login/' + doc[0].email);
+    });
 });
 
 /**
@@ -67,29 +103,6 @@ new mongodb.Db('my-website', server).open(function(err, client){
     if(err) throw err;
     console.log('\033[96m + \033[39m connected to mongodb');
     app.users = new mongodb.Collection(client, 'users');
-
-    /**
-     * 处理注册路由
-     */
-    app.post('/signup', function(req, res, next){
-        console.log(req.body);
-        app.users.insert(req.body.user, function(err, doc){
-            if(err) return next(err);
-            res.redirect('/login/' + doc[0].email);
-        });
-    });
-
-    /**
-     * 登录处理路由
-     */
-    app.post('/login', function(req, res){
-        app.users.findOne({ email: req.body.user.email, password: req.body.user.password }, function(err, doc){
-            if(err) return next(err);
-            if(!doc) return res.send('<p>User not found. Go back and try again</p>');
-            req.session.loggedIn = doc._id.toString();
-            res.redirect('/');
-        });
-    });
 
     /**
      * 保证在查询前建立索引
